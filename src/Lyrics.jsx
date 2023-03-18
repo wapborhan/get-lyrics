@@ -23,7 +23,7 @@ const Lyrics = (props) => {
       }}
     >
       <div className="container">
-        <div className="row pb-5">{songs}</div>
+        <div className="row p b-5">{songs}</div>
       </div>
     </div>
   );

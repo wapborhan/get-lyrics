@@ -8,6 +8,7 @@ const Footer = () => {
         className="text-dark text-decoration-none"
         href="https://www.srdreamlab.com"
         target="_blank"
+        rel="noreferrer"
       >
         SR Dream Lab
       </a>
