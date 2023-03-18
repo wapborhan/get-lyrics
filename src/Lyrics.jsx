@@ -16,8 +16,15 @@ const Lyrics = (props) => {
     );
   });
   return (
-    <div className="container">
-      <div className="row mb-5">{songs}</div>
+    <div
+      className="s"
+      style={{
+        background: "rgb(70 8 85 / 73%)",
+      }}
+    >
+      <div className="container">
+        <div className="row pb-5">{songs}</div>
+      </div>
     </div>
   );
 };
