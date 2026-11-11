@@ -336,7 +336,7 @@ export default function App() {
 
         {/* Results Grid */}
         {!isLoading && songs !== null && songs.length > 0 && (
-          <Lyrics songs={songs} searchQuery={submittedQuery} />
+          <Lyrics key={submittedQuery} songs={songs} searchQuery={submittedQuery} />
         )}
       </main>
 

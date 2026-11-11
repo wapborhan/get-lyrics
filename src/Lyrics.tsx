@@ -23,6 +23,7 @@ export default function Lyrics({ songs, searchQuery }: LyricsProps) {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const stopAudio = useCallback(() => {
     if (audioRef.current) {
@@ -51,13 +52,21 @@ export default function Lyrics({ songs, searchQuery }: LyricsProps) {
 
   useEffect(() => {
     if (!selectedSong) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         closeModal();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [selectedSong, closeModal]);
 
   const handleSelectSong = async (song: Song) => {
@@ -114,13 +123,14 @@ export default function Lyrics({ songs, searchQuery }: LyricsProps) {
     audioRef.current = audio;
     setPlayingSongId(song.id);
 
-    audio.addEventListener("ended", () => {
+    const clearPlaying = () => {
       setPlayingSongId((current) => (current === song.id ? null : current));
-    });
+    };
 
-    audio.play().catch(() => {
-      setPlayingSongId(null);
-    });
+    audio.addEventListener("ended", clearPlaying);
+    audio.addEventListener("error", clearPlaying);
+
+    audio.play().catch(clearPlaying);
   };
 
   const handleCopyLyrics = async () => {
@@ -165,16 +175,12 @@ export default function Lyrics({ songs, searchQuery }: LyricsProps) {
             <article
               key={item.id}
               onClick={() => handleSelectSong(item)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleSelectSong(item);
-                }
-              }}
-              role="button"
-              tabIndex={0}
               style={{ animationDelay: `${Math.min(index * 55, 440)}ms` }}
-              className="group animate-fade-up relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-fuchsia-400/40 hover:bg-white/[0.08] hover:shadow-2xl hover:shadow-fuchsia-500/15 focus:ring-2 focus:ring-fuchsia-400/70 focus:outline-none"
+              className={`group animate-fade-up relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border backdrop-blur-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-fuchsia-400/40 hover:bg-white/[0.08] hover:shadow-2xl hover:shadow-fuchsia-500/15 ${
+                isPlaying
+                  ? "border-fuchsia-400/60 bg-white/[0.08] shadow-xl shadow-fuchsia-500/20 ring-1 ring-fuchsia-400/40"
+                  : "border-white/10 bg-white/[0.04]"
+              }`}
             >
               {/* Cover image */}
               <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-900">
@@ -246,7 +252,14 @@ export default function Lyrics({ songs, searchQuery }: LyricsProps) {
                 </div>
 
                 <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-3.5">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-fuchsia-300 transition-colors group-hover:text-cyan-300">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectSong(item);
+                    }}
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-md text-xs font-semibold text-fuchsia-300 transition-colors group-hover:text-cyan-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400"
+                  >
                     {isPlaying ? (
                       <>
                         <span className="flex h-3 items-end gap-0.5">
@@ -254,13 +267,16 @@ export default function Lyrics({ songs, searchQuery }: LyricsProps) {
                           <span className="animate-eq-2 h-3 w-0.5 rounded-full bg-cyan-400" />
                           <span className="animate-eq-3 h-3 w-0.5 rounded-full bg-fuchsia-400" />
                         </span>
-                        Playing preview
+                        Playing preview &bull; Read Lyrics
                       </>
                     ) : (
                       "Read Lyrics"
                     )}
-                  </span>
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/5 text-slate-300 transition-all duration-300 group-hover:translate-x-1 group-hover:bg-fuchsia-500/20 group-hover:text-white">
+                  </button>
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/5 text-slate-300 transition-all duration-300 group-hover:translate-x-1 group-hover:bg-fuchsia-500/20 group-hover:text-white"
+                  >
                     <svg
                       className="h-4 w-4"
                       viewBox="0 0 24 24"
@@ -320,10 +336,11 @@ export default function Lyrics({ songs, searchQuery }: LyricsProps) {
                 </p>
               </div>
               <button
+                ref={closeButtonRef}
                 type="button"
                 onClick={closeModal}
                 aria-label="Close lyrics modal"
-                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/15 hover:text-white"
+                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400"
               >
                 <svg
                   className="h-4 w-4"
